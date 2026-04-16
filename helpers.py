@@ -1,7 +1,5 @@
-import requests
 import random
 import string
-from urls import BASE_URL
 
 
 def generate_random_string(length: int) -> str:

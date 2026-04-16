@@ -1,7 +1,6 @@
 import allure
 import pytest
-import requests
-from urls import BASE_URL
+from api_client import ScooterApiClient
 from data import ORDER_DATA
 
 
@@ -13,7 +12,8 @@ class TestCreateOrder:
         ORDER_DATA
     )
     def test_create_order_with_color_variations(
-        self, first_name, last_name, address, metro_station, phone, rent_time, delivery_date, comment, color
+        self, api_client, first_name, last_name, address, metro_station, phone,
+        rent_time, delivery_date, comment, color
     ):
         payload = {
             "firstName": first_name,
@@ -27,7 +27,7 @@ class TestCreateOrder:
             "color": color
         }
 
-        response = requests.post(f"{BASE_URL}/api/v1/orders", json=payload)
+        response = api_client.create_order(payload)
 
         assert response.status_code == 201
         assert "track" in response.json()

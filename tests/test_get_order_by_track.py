@@ -1,43 +1,31 @@
 import allure
-import pytest
 import requests
-from helpers import create_order_and_return_track, get_order_by_track
-from urls import BASE_URL
+from api_client import ScooterApiClient
+from urls import BASE_URL, ENDPOINT_ORDERS_TRACK
 
 
 class TestGetOrderByTrack:
 
     @allure.title("Успешное получение заказа по трек-номеру")
-    def test_get_order_by_track_success(self):
-        order_payload = {
-            "firstName": "Test",
-            "lastName": "User",
-            "address": "Test Address",
-            "metroStation": 1,
-            "phone": "+79991234567",
-            "rentTime": 3,
-            "deliveryDate": "2026-05-01",
-            "comment": "",
-            "color": ["BLACK"]
-        }
-        track = create_order_and_return_track(order_payload)
-        assert track is not None, "Не удалось создать заказ"
+    def test_get_order_by_track_success(self, api_client, created_order):
+        track, order_id = created_order
 
-        order = get_order_by_track(track)
+        response = api_client.get_order_by_track(track)
 
+        assert response.status_code == 200
+        order = response.json().get("order")
         assert order is not None
-        assert "id" in order
-        assert "track" in order
         assert order["track"] == track
+        assert "id" in order
 
     @allure.title("Получение заказа без трек-номера")
     def test_get_order_without_track_fails(self):
-        response = requests.get(f"{BASE_URL}/api/v1/orders/track")
+        response = requests.get(f"{BASE_URL}{ENDPOINT_ORDERS_TRACK}")
         assert response.status_code == 400
         assert "Недостаточно данных для поиска" in response.json().get("message", "")
 
     @allure.title("Получение заказа с несуществующим трек-номером")
-    def test_get_order_nonexistent_track_fails(self):
-        response = requests.get(f"{BASE_URL}/api/v1/orders/track", params={"t": 999999})
+    def test_get_order_nonexistent_track_fails(self, api_client):
+        response = api_client.get_order_by_track(999999)
         assert response.status_code == 404
         assert "Заказ не найден" in response.json().get("message", "")
