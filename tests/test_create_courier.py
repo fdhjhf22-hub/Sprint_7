@@ -19,7 +19,7 @@ class TestCreateCourier:
         assert response.status_code == 201
         assert response.json() == {"ok": True}
 
-        # Получаем ID созданного курьера и удаляем его через фикстуру не можем, поэтому удаляем явно.
+        # Удаляем созданного курьера
         login_resp = api_client.login_courier(login, password)
         if login_resp.status_code == 200:
             courier_id = login_resp.json().get("id")
@@ -29,8 +29,6 @@ class TestCreateCourier:
     @allure.title("Нельзя создать двух одинаковых курьеров")
     def test_create_duplicate_courier_fails(self, api_client, registered_courier):
         login, password, first_name, courier_id = registered_courier
-
-        # Попытка создать курьера с тем же логином
         response = api_client.register_courier(login, password, first_name)
 
         assert response.status_code == 409

@@ -9,28 +9,25 @@ class TestLoginCourier:
 
     @allure.title("Успешная авторизация курьера")
     def test_login_courier_success(self, api_client, registered_courier):
-        assert registered_courier is not None, "Не удалось создать курьера"
         login, password, first_name, courier_id = registered_courier
-
         response = api_client.login_courier(login, password)
+
         assert response.status_code == 200
         assert "id" in response.json()
 
     @allure.title("Авторизация с неверным логином")
     def test_login_invalid_login_fails(self, api_client, registered_courier):
-        assert registered_courier is not None, "Не удалось создать курьера"
         login, password, first_name, courier_id = registered_courier
-
         response = api_client.login_courier("invalid_login", password)
+
         assert response.status_code == 404
         assert "Учетная запись не найдена" in response.json().get("message", "")
 
     @allure.title("Авторизация с неверным паролем")
     def test_login_invalid_password_fails(self, api_client, registered_courier):
-        assert registered_courier is not None, "Не удалось создать курьера"
         login, password, first_name, courier_id = registered_courier
-
         response = api_client.login_courier(login, "wrong_password")
+
         assert response.status_code == 404
         assert "Учетная запись не найдена" in response.json().get("message", "")
 
@@ -41,6 +38,7 @@ class TestLoginCourier:
         del payload[missing_field]
 
         response = requests.post(f"{BASE_URL}{ENDPOINT_LOGIN}", data=payload)
+
         assert response.status_code in [400, 504]
 
     @allure.title("Авторизация под несуществующим пользователем")

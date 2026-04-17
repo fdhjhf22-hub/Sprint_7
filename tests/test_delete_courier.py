@@ -8,7 +8,6 @@ class TestDeleteCourier:
 
     @allure.title("Успешное удаление курьера")
     def test_delete_courier_success(self, api_client, registered_courier):
-        assert registered_courier is not None, "Не удалось создать курьера"
         login, password, first_name, courier_id = registered_courier
 
         response = api_client.delete_courier(courier_id)

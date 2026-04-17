@@ -1,7 +1,5 @@
 import allure
-import pytest
 from api_client import ScooterApiClient
-from urls import BASE_URL
 
 
 class TestAcceptOrder:
@@ -19,7 +17,6 @@ class TestAcceptOrder:
     @allure.title("Принятие заказа без ID курьера")
     def test_accept_order_without_courier_id_fails(self, api_client):
         response = api_client.accept_order(order_id=1, courier_id=None)
-        # Параметр courierId будет отсутствовать, сервер вернёт 400
         assert response.status_code == 400
 
     @allure.title("Принятие заказа с неверным ID курьера")
@@ -31,7 +28,6 @@ class TestAcceptOrder:
     @allure.title("Принятие заказа без ID заказа")
     def test_accept_order_without_order_id_fails(self, api_client):
         response = api_client.accept_order(order_id=None, courier_id=1)
-        # Сервер может вернуть 400, 404 или 500
         assert response.status_code in [400, 404, 500]
 
     @allure.title("Принятие заказа с неверным ID заказа")

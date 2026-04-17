@@ -11,45 +11,42 @@ def api_client():
 
 
 @pytest.fixture(scope="function")
-def test_courier_credentials():
-    """Генерирует случайные данные для курьера и возвращает (login, password, first_name)."""
+def registered_courier(api_client):
+    """
+    Создаёт курьера со случайными данными, авторизует его и возвращает
+    кортеж (login, password, first_name, courier_id).
+    После теста курьер удаляется.
+    """
     login = generate_random_string(10)
     password = generate_random_string(10)
     first_name = generate_random_string(10)
-    return login, password, first_name
 
-
-@pytest.fixture(scope="function")
-def registered_courier(api_client, test_courier_credentials):
-    """
-    Создаёт курьера с помощью API и возвращает (login, password, first_name, courier_id).
-    Если создание не удалось, возвращает None.
-    """
-    login, password, first_name = test_courier_credentials
+    # Предусловие: создание курьера
     response = api_client.register_courier(login, password, first_name)
-    if response.status_code != 201:
-        return None
-    # Получаем ID через логин
+
+    # Авторизация для получения ID
     login_resp = api_client.login_courier(login, password)
-    if login_resp.status_code != 200:
-        return None
-    courier_id = login_resp.json().get("id")
-    return login, password, first_name, courier_id
+    courier_id = login_resp.json().get("id") if login_resp.status_code == 200 else None
+
+    yield login, password, first_name, courier_id
+
+    # Очистка после теста
+    if courier_id:
+        api_client.delete_courier(courier_id)
 
 
 @pytest.fixture(scope="function")
 def created_order(api_client):
     """
-    Создаёт заказ и возвращает (track, order_id).
-    Если создание не удалось, возвращает (None, None).
+    Создаёт тестовый заказ и возвращает кортеж (track, order_id).
+    Очистка не требуется.
     """
     response = api_client.create_order(BASE_ORDER_PAYLOAD)
-    if response.status_code != 201:
-        return None, None
-    track = response.json().get("track")
-    order_resp = api_client.get_order_by_track(track)
-    if order_resp.status_code != 200:
-        return None, None
-    order = order_resp.json().get("order")
-    order_id = order.get("id")
-    return track, order_id
+    track = response.json().get("track") if response.status_code == 201 else None
+
+    if track:
+        order_resp = api_client.get_order_by_track(track)
+        order = order_resp.json().get("order") if order_resp.status_code == 200 else {}
+        order_id = order.get("id")
+        return track, order_id
+    return None, None
