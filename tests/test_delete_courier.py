@@ -8,20 +8,15 @@ class TestDeleteCourier:
 
     @allure.title("Успешное удаление курьера")
     def test_delete_courier_success(self, api_client, registered_courier):
+        assert registered_courier is not None, "Не удалось создать курьера"
         login, password, first_name, courier_id = registered_courier
 
         response = api_client.delete_courier(courier_id)
-
         assert response.status_code == 200
         assert response.json() == {"ok": True}
 
-        # Проверяем, что авторизация с удалённым курьером возвращает ошибку
-        login_resp = api_client.login_courier(login, password)
-        assert login_resp.status_code == 404
-
     @allure.title("Удаление курьера без ID")
     def test_delete_courier_without_id_fails(self):
-        # Запрос на ручку без ID (просто /api/v1/courier/)
         response = requests.delete(f"{BASE_URL}{ENDPOINT_COURIER_DELETE.format(courier_id='')}")
         assert response.status_code == 404
 

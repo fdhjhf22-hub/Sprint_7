@@ -1,5 +1,4 @@
 import pytest
-import requests
 from helpers import generate_random_string
 from api_client import ScooterApiClient
 from data import BASE_ORDER_PAYLOAD
@@ -12,39 +11,45 @@ def api_client():
 
 
 @pytest.fixture(scope="function")
-def registered_courier(api_client):
-    """Создаёт курьера со случайными данными, возвращает (login, password, first_name, courier_id)."""
+def test_courier_credentials():
+    """Генерирует случайные данные для курьера и возвращает (login, password, first_name)."""
     login = generate_random_string(10)
     password = generate_random_string(10)
     first_name = generate_random_string(10)
+    return login, password, first_name
 
+
+@pytest.fixture(scope="function")
+def registered_courier(api_client, test_courier_credentials):
+    """
+    Создаёт курьера с помощью API и возвращает (login, password, first_name, courier_id).
+    Если создание не удалось, возвращает None.
+    """
+    login, password, first_name = test_courier_credentials
     response = api_client.register_courier(login, password, first_name)
-    assert response.status_code == 201, f"Не удалось создать курьера: {response.text}"
-
+    if response.status_code != 201:
+        return None
+    # Получаем ID через логин
     login_resp = api_client.login_courier(login, password)
-    assert login_resp.status_code == 200, f"Не удалось авторизоваться: {login_resp.text}"
+    if login_resp.status_code != 200:
+        return None
     courier_id = login_resp.json().get("id")
-
-    yield login, password, first_name, courier_id
-
-    # Удаляем курьера после теста
-    if courier_id:
-        api_client.delete_courier(courier_id)
+    return login, password, first_name, courier_id
 
 
 @pytest.fixture(scope="function")
 def created_order(api_client):
-    """Создаёт тестовый заказ и возвращает его track, order_id."""
+    """
+    Создаёт заказ и возвращает (track, order_id).
+    Если создание не удалось, возвращает (None, None).
+    """
     response = api_client.create_order(BASE_ORDER_PAYLOAD)
-    assert response.status_code == 201, f"Не удалось создать заказ: {response.text}"
+    if response.status_code != 201:
+        return None, None
     track = response.json().get("track")
-
     order_resp = api_client.get_order_by_track(track)
-    assert order_resp.status_code == 200
+    if order_resp.status_code != 200:
+        return None, None
     order = order_resp.json().get("order")
     order_id = order.get("id")
-
-    yield track, order_id
-
-    # Заказ не удаляется (в API нет удаления), но можно отменить при необходимости.
-    # Для тестов это не критично.
+    return track, order_id
